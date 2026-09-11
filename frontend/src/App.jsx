@@ -1,24 +1,48 @@
 import { useEffect, useState } from "react";
 
 function App() {
-    const [message, setMessage] = useState("Connexion en cours...");
+    const [utilisateurs, setUtilisateurs] = useState([]);
+    const [chargement, setChargement] = useState(true);
 
     useEffect(() => {
-        fetch("http://localhost:5000/api/test")
-            .then((response) => response.json())
+        fetch("http://localhost:5000/api/utilisateurs")
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error("Erreur lors de la récupération des utilisateurs");
+                }
+
+                return response.json();
+            })
             .then((data) => {
-                setMessage(data.message);
+                setUtilisateurs(data);
             })
             .catch((error) => {
                 console.error(error);
-                setMessage("Erreur de connexion avec le serveur.");
+            })
+            .finally(() => {
+                setChargement(false);
             });
     }, []);
 
     return (
         <div>
             <h1>Parléo 🇫🇷</h1>
-            <p>{message}</p>
+
+            <h2>Utilisateurs</h2>
+
+            {chargement ? (
+                <p>Chargement...</p>
+            ) : utilisateurs.length === 0 ? (
+                <p>Aucun utilisateur pour le moment.</p>
+            ) : (
+                <ul>
+                    {utilisateurs.map((utilisateur) => (
+                        <li key={utilisateur.id}>
+                            {utilisateur.nom} - {utilisateur.email}
+                        </li>
+                    ))}
+                </ul>
+            )}
         </div>
     );
 }
