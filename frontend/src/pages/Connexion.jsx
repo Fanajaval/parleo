@@ -19,7 +19,7 @@ function Connexion() {
                 mot_de_passe: motDePasse,
             });
 
-            //test
+            //provisoire
             localStorage.setItem("token", data.token);
 
             setMessage(data.message);
