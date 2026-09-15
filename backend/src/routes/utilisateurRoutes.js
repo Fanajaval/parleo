@@ -4,8 +4,10 @@ const {
     obtenirUtilisateurs
 } = require("../controllers/utilisateurController");
 
+const verifierToken = require("../middlewares/authMiddleware");
+
 const router = express.Router();
 
-router.get("/", obtenirUtilisateurs);
+router.get("/", verifierToken, obtenirUtilisateurs);
 
 module.exports = router;
