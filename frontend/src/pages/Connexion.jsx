@@ -22,6 +22,11 @@ function Connexion() {
             //provisoire
             localStorage.setItem("token", data.token);
 
+            localStorage.setItem(
+                "utilisateur",
+                JSON.stringify(data.utilisateur)
+            );
+
             setMessage(data.message);
 
             console.log("Utilisateur connecté :", data.utilisateur);
