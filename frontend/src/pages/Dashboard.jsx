@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 function Dashboard() {
     const [utilisateur, setUtilisateur] = useState(null);
+
+    const navigate = useNavigate();
 
     useEffect(() => {
         const utilisateurStocke = localStorage.getItem("utilisateur");
@@ -10,6 +13,13 @@ function Dashboard() {
             setUtilisateur(JSON.parse(utilisateurStocke));
         }
     }, []);
+
+    const seDeconnecter = () => {
+        localStorage.removeItem("token");
+        localStorage.removeItem("utilisateur");
+
+        navigate("/connexion");
+    };
 
     if (!utilisateur) {
         return <p>Chargement...</p>;
@@ -30,6 +40,10 @@ function Dashboard() {
             <p>
                 Niveau : {utilisateur.niveau}
             </p>
+
+            <button onClick={seDeconnecter}>
+                Se déconnecter
+            </button>
         </div>
     );
 }
