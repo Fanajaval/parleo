@@ -7,6 +7,7 @@ function Conversation() {
     const [ecouteVocale, setEcouteVocale] = useState(false);
     const [statutMicro, setStatutMicro] = useState("Dictée vocale disponible");
     const recognitionRef = useRef(null);
+    const silenceTimerRef = useRef(null);
 
     const parler = (texte) => {
         if (!texte || !("speechSynthesis" in window)) {
@@ -32,32 +33,73 @@ function Conversation() {
 
         const recognition = new SpeechRecognition();
         recognition.lang = "fr-FR";
-        recognition.continuous = false;
-        recognition.interimResults = false;
+        recognition.continuous = true;
+        recognition.interimResults = true;
+
+        let finalTranscript = "";
 
         recognition.onstart = () => {
             setEcouteVocale(true);
             setStatutMicro("Je vous écoute...");
+            finalTranscript = "";
         };
 
         recognition.onresult = (event) => {
-            const transcript = event.results[0][0].transcript;
-            setNouveauMessage(transcript);
+            let interimTranscript = "";
+            
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                const transcript = event.results[i][0].transcript;
+                if (event.results[i].isFinal) {
+                    finalTranscript += transcript + " ";
+                } else {
+                    interimTranscript += transcript;
+                }
+            }
+
+            const currentText = (finalTranscript + interimTranscript).trim();
+            setNouveauMessage(currentText);
+
+            if (silenceTimerRef.current) {
+                clearTimeout(silenceTimerRef.current);
+            }
+
+            silenceTimerRef.current = setTimeout(() => {
+                if (finalTranscript.trim()) {
+                    recognition.stop();
+                }
+            }, 5000);
         };
 
         recognition.onend = () => {
             setEcouteVocale(false);
             setStatutMicro("Dictée vocale disponible");
+            if (silenceTimerRef.current) {
+                clearTimeout(silenceTimerRef.current);
+                silenceTimerRef.current = null;
+            }
         };
 
-        recognition.onerror = () => {
+        recognition.onerror = (event) => {
             setEcouteVocale(false);
-            setStatutMicro("Le micro n’a pas pu comprendre votre phrase.");
+            if (event.error === 'no-speech') {
+                setStatutMicro("Aucune parole détectée. Réessayez.");
+            } else if (event.error === 'aborted') {
+                setStatutMicro("Dictée vocale disponible");
+            } else {
+                setStatutMicro("Erreur du micro. Réessayez.");
+            }
+            if (silenceTimerRef.current) {
+                clearTimeout(silenceTimerRef.current);
+                silenceTimerRef.current = null;
+            }
         };
 
         recognitionRef.current = recognition;
 
         return () => {
+            if (silenceTimerRef.current) {
+                clearTimeout(silenceTimerRef.current);
+            }
             recognition.stop();
             window.speechSynthesis?.cancel();
         };
@@ -115,7 +157,7 @@ function Conversation() {
 
             parler(donnees.audioText || reponseIa);
         } catch (erreur) {
-            const messageErreur = "Je n’ai pas pu corriger votre phrase. Réessayez avec une phrase plus simple.";
+            const messageErreur = "Je n'ai pas pu corriger votre phrase. Réessayez avec une phrase plus simple.";
             setMessages((messagesActuels) => [
                 ...messagesActuels,
                 { role: "ia", texte: messageErreur }
