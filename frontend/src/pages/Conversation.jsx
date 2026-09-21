@@ -1,22 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
-const conversationInitiale = [
-    {
-        role: "ia",
-        texte: "Bonjour ! Comment vous appelez-vous ?"
-    },
-    {
-        role: "utilisateur",
-        texte: "Je m'appelle Karim, je suis étudiant."
-    },
-    {
-        role: "ia",
-        texte: "Très bien. Vous pouvez dire : Je m'appelle Karim et je suis étudiant en informatique."
-    }
-];
-
 function Conversation() {
-    const [messages, setMessages] = useState(conversationInitiale);
+    const [messages, setMessages] = useState([]);
     const [nouveauMessage, setNouveauMessage] = useState("");
     const [chargement, setChargement] = useState(false);
     const [ecouteVocale, setEcouteVocale] = useState(false);
