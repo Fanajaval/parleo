@@ -1,0 +1,9 @@
+{
+  "paths": {
+    "canvases": "./designs"
+  },
+  "scripts": {
+    "install": "npm install",
+    "start": "npm run dev"
+  }
+}
