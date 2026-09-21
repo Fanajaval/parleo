@@ -6,17 +6,29 @@ const inscrire = async (req, res) => {
     try {
         const { nom, email, mot_de_passe } = req.body;
 
-        //verif champ obligatoire
         if (!nom || !email || !mot_de_passe) {
             return res.status(400).json({
                 message: "Tous les champs sont obligatoires."
             });
         }
 
-        //verif email si existe deja
+        const emailValide = /.+@.+\..+/.test(email.trim());
+
+        if (!emailValide) {
+            return res.status(400).json({
+                message: "L'adresse email n'est pas valide."
+            });
+        }
+
+        if (mot_de_passe.length < 8) {
+            return res.status(400).json({
+                message: "Le mot de passe doit contenir au moins 8 caractères."
+            });
+        }
+
         const [utilisateurs] = await pool.query(
             "SELECT id FROM utilisateurs WHERE email = ?",
-            [email]
+            [email.trim().toLowerCase()]
         );
 
         if (utilisateurs.length > 0) {
@@ -25,26 +37,24 @@ const inscrire = async (req, res) => {
             });
         }
 
-        //hackage mdp
         const motDePasseHache = await bcrypt.hash(mot_de_passe, 10);
-        
 
         const [resultat] = await pool.query(
             `INSERT INTO utilisateurs
-            (nom, email, mot_de_passe)
-            VALUES (?, ?, ?)`,
-            [nom, email, motDePasseHache]
+            (nom, email, mot_de_passe, niveau)
+            VALUES (?, ?, ?, 'A1')`,
+            [nom.trim(), email.trim().toLowerCase(), motDePasseHache]
         );
 
         res.status(201).json({
             message: "Utilisateur créé avec succès.",
             utilisateur: {
                 id: resultat.insertId,
-                nom,
-                email
+                nom: nom.trim(),
+                email: email.trim().toLowerCase(),
+                niveau: "A1"
             }
         });
-
     } catch (error) {
         console.error("Erreur inscription :", error);
 
@@ -64,10 +74,9 @@ const connecter = async (req, res) => {
             });
         }
 
-        //recherche par mail
         const [utilisateurs] = await pool.query(
             "SELECT * FROM utilisateurs WHERE email = ?",
-            [email]
+            [String(email).trim().toLowerCase()]
         );
 
         if (utilisateurs.length === 0) {
@@ -78,7 +87,6 @@ const connecter = async (req, res) => {
 
         const utilisateur = utilisateurs[0];
 
-        //verif mdp
         const motDePasseCorrect = await bcrypt.compare(
             mot_de_passe,
             utilisateur.mot_de_passe
@@ -90,13 +98,12 @@ const connecter = async (req, res) => {
             });
         }
 
-        //token
         const token = jwt.sign(
             {
                 id: utilisateur.id,
                 email: utilisateur.email
             },
-            process.env.JWT_SECRET,
+            process.env.JWT_SECRET || "parleo_secret_de_developpement",
             {
                 expiresIn: "7d"
             }
@@ -109,10 +116,9 @@ const connecter = async (req, res) => {
                 id: utilisateur.id,
                 nom: utilisateur.nom,
                 email: utilisateur.email,
-                niveau: utilisateur.niveau
+                niveau: utilisateur.niveau || "A1"
             }
         });
-
     } catch (error) {
         console.error("Erreur connexion :", error);
 
